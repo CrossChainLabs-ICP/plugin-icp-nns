@@ -292,6 +292,18 @@ export const starterPlugin: Plugin = {
           },
         },
         {
+          name: 'governance_provider_returns_content',
+          fn: async () => {
+            const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
+            if (!provider) throw new Error('Governance provider not found');
+            // Simulate a message with limit=1
+            const message = { content: { text: '!proposals 1', source: 'test' } } as Memory;
+            const result = await provider.get(null as any, message, null as any);
+            const contentArray = (result.data as { content: Content[] }).content;
+            if (!contentArray || contentArray.length === 0) throw new Error('Governance provider returned empty content');
+          },
+        },
+        {
           name: 'example_test',
           fn: async (runtime) => {
             logger.debug('example_test run by ', runtime.character.name);
