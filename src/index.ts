@@ -89,6 +89,8 @@ const governanceProvider: Provider = {
       const id = p.id[0].id.toString();
       const title = p.proposal[0].title[0];
       content.push({ type: 'text', text: `#${id} ${title}` });
+      logger.info(`Proposal title: ${title}`);
+      logger.info('Summary: ', p.proposal[0].summary);
     }
 
     return { text: '', values: {}, data: { content } };
