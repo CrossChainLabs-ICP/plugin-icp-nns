@@ -15,6 +15,86 @@ import {
 } from '@elizaos/core';
 import { z } from 'zod';
 
+// Import ICP Governance canister actor utilities and types
+import { Actor, HttpAgent, type ActorSubclass } from '@dfinity/agent';
+import type {
+  _SERVICE as GovernanceService,
+  ListProposalInfoResponse,
+  ProposalInfo,
+  ListProposalInfo
+} from './governance/governance.did.js';
+import { idlFactory } from './governance/governance.did.js';
+
+// Governance canister ID
+const GOVERNANCE_CANISTER_ID = 'rrkah-fqaaa-aaaaa-aaaaq-cai';
+
+/**
+ * Create an authenticated actor for the NNS Governance canister
+ */
+async function createGovernanceActor(): Promise<ActorSubclass<GovernanceService>> {
+  const agent = await HttpAgent.create({ host: 'https://ic0.app' });
+  return Actor.createActor<GovernanceService>(idlFactory, {
+    agent,
+    canisterId: GOVERNANCE_CANISTER_ID,
+  });
+}
+
+/**
+ * Fetch a list of proposals from the NNS Governance canister
+ */
+async function fetchProposals(
+  limit: number = 10
+): Promise<ListProposalInfoResponse> {
+  const governance = await createGovernanceActor();
+  // Build the request with correct types
+  const request: ListProposalInfo = {
+    include_reward_status: [],               // Vec<Int32>
+    exclude_topic: [],                       // Vec<Int32>
+    include_status: [],                      // Vec<Int32>
+    omit_large_fields: [],                   // Opt<Bool>
+    before_proposal: [],                     // Opt<ProposalId>
+    include_all_manage_neuron_proposals: [], // Opt<Bool>
+    limit: limit,                            // Nat32 as number
+  };
+  return governance.list_proposals(request);
+}
+
+/**
+ * Fetch detailed info for a specific proposal
+ */
+async function fetchProposalInfo(
+  proposalId: bigint
+): Promise<[] | [ProposalInfo]> {
+  const governance = await createGovernanceActor();
+  return governance.get_proposal_info(proposalId);
+}
+
+/**
+ * Provider handling `!proposals [limit]` commands
+ */
+const governanceProvider: Provider = {
+  name: 'GOVERNANCE_PROVIDER',
+  description: 'Fetch NNS Governance proposals via !proposals command',
+  get: async (
+    _runtime: IAgentRuntime,
+    message: Memory,
+    _state: State
+  ): Promise<ProviderResult> => {
+    const match = message.content.text.match(/^!proposals(?:\s+(\d+))?$/i);
+    const limit = match && match[1] ? parseInt(match[1], 10) : 10;
+    const response = await fetchProposals(limit);
+    const content: Content[] = [];
+
+    for (const p of response.proposal_info) {
+      const id = p.id[0].id.toString();
+      const title = p.proposal[0].title[0];
+      content.push({ type: 'text', text: `#${id} ${title}` });
+    }
+
+    return { text: '', values: {}, data: { content } };
+  },
+};
+
 /**
  * Defines the configuration schema for a plugin, including the validation rules for the plugin name.
  *
