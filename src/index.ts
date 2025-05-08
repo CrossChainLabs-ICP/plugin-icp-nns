@@ -284,6 +284,14 @@ export const starterPlugin: Plugin = {
       name: 'plugin_starter_test_suite',
       tests: [
         {
+          name: 'should_have_governance_provider',
+          fn: async () => {
+            if (!starterPlugin.providers.some(p => p.name === 'GOVERNANCE_PROVIDER')) {
+              throw new Error('Governance provider not found in plugin providers');
+            }
+          },
+        },
+        {
           name: 'example_test',
           fn: async (runtime) => {
             logger.debug('example_test run by ', runtime.character.name);
@@ -360,7 +368,7 @@ export const starterPlugin: Plugin = {
   },
   services: [StarterService],
   actions: [helloWorldAction],
-  providers: [helloWorldProvider],
+  providers: [helloWorldProvider, governanceProvider],
 };
 
 export default starterPlugin;
