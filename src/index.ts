@@ -88,8 +88,14 @@ const governanceProvider: Provider = {
     for (const p of response.proposal_info) {
       const id = p.id[0].id.toString();
       const title = p.proposal[0].title[0];
+      const pInfoResult = await fetchProposalInfo(p.id[0].id);
+      const pInfo: ProposalInfo = pInfoResult[0];
+      const topic = pInfo.topic;
       content.push({ type: 'text', text: `#${id} ${title}` });
       logger.info(`Proposal title: ${title}`);
+      logger.info('Topic: ', topic);
+      logger.info('Status: ', pInfo.status);
+      logger.info('pInfo: ', pInfo);
       logger.info('Summary: ', p.proposal[0].summary);
     }
 
@@ -298,8 +304,8 @@ export const starterPlugin: Plugin = {
           fn: async () => {
             const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
-            // Simulate a message with limit=1
-            const message = { content: { text: '!proposals 1', source: 'test' } } as Memory;
+            // Simulate a message with limit=10
+            const message = { content: { text: '!proposals 10', source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
             const contentArray = (result.data as { content: Content[] }).content;
             if (!contentArray || contentArray.length === 0) throw new Error('Governance provider returned empty content');
