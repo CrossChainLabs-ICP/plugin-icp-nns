@@ -24,6 +24,7 @@ import type {
   ListProposalInfo
 } from './governance/governance.did.js';
 import { idlFactory } from './governance/governance.did.js';
+//import { Topic } from './topic';
 
 // Governance canister ID
 const GOVERNANCE_CANISTER_ID = 'rrkah-fqaaa-aaaaa-aaaaq-cai';
@@ -99,6 +100,7 @@ const governanceProvider: Provider = {
       const pInfo: ProposalInfo = pInfoResult[0];
       const topic = pInfo.topic.toString();
       const status = pInfo.status.toString();
+      const proposal_timestamp_seconds = pInfo.proposal_timestamp_seconds;
 
       // Only include proposals matching filters
       if (topicFilter !== undefined && parseInt(topic) !== topicFilter) continue;
@@ -113,6 +115,7 @@ const governanceProvider: Provider = {
       logger.info(`Topic: ${topic}`);
       logger.info(`Status: ${status}`);
       logger.info(`Summary: ${summary}`);
+      logger.info(`Proposal Timestamp: ${proposal_timestamp_seconds}`);
     }
 
     return { text: '', values: {}, data: { content } };
@@ -320,7 +323,7 @@ export const starterPlugin: Plugin = {
           fn: async () => {
             const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
-            const message = { content: { text: '!proposals 1', source: 'test' } } as Memory;
+            const message = { content: { text: '!proposals 10', source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
             const content = (result.data as any).content.map((c: Content) => c.text);
             if (!content.some((t: string) => t.startsWith('Topic:'))) {
