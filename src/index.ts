@@ -90,12 +90,11 @@ const governanceProvider: Provider = {
       const title = p.proposal[0].title[0];
       const pInfoResult = await fetchProposalInfo(p.id[0].id);
       const pInfo: ProposalInfo = pInfoResult[0];
-      const topic = pInfo.topic;
+
       content.push({ type: 'text', text: `#${id} ${title}` });
       logger.info(`Proposal title: ${title}`);
-      logger.info('Topic: ', topic);
-      logger.info('Status: ', pInfo.status);
-      logger.info('pInfo: ', pInfo);
+      logger.info(`Topic: ${pInfo.topic}`);
+      logger.info(`Status: ${pInfo.status}`);
       logger.info('Summary: ', p.proposal[0].summary);
     }
 
