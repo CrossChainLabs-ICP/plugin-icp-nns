@@ -88,14 +88,21 @@ const governanceProvider: Provider = {
     for (const p of response.proposal_info) {
       const id = p.id[0].id.toString();
       const title = p.proposal[0].title[0];
+      const summary = p.proposal[0].summary || 'No summary provided';
       const pInfoResult = await fetchProposalInfo(p.id[0].id);
       const pInfo: ProposalInfo = pInfoResult[0];
+      const topic = pInfo.topic.toString();
+      const status = pInfo.status.toString();
 
       content.push({ type: 'text', text: `#${id} ${title}` });
+      content.push({ type: 'text', text: `Topic: ${topic}` });
+      content.push({ type: 'text', text: `Status: ${status}` });
+      content.push({ type: 'text', text: `Summary: ${summary}` });
+
       logger.info(`Proposal title: ${title}`);
-      logger.info(`Topic: ${pInfo.topic}`);
-      logger.info(`Status: ${pInfo.status}`);
-      logger.info('Summary: ', p.proposal[0].summary);
+      logger.info(`Topic: ${topic}`);
+      logger.info(`Status: ${status}`);
+      logger.info(`Summary: ${summary}`);
     }
 
     return { text: '', values: {}, data: { content } };
