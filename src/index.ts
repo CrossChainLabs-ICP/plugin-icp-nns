@@ -80,8 +80,10 @@ const governanceProvider: Provider = {
     message: Memory,
     _state: State
   ): Promise<ProviderResult> => {
-    const match = message.content.text.match(/^!proposals(?:\s+(\d+))?$/i);
+    const match = message.content.text.match(/^!proposals(?:\s+(\d+))?(?:\s+topic\s+(\d+))?$/i);
     const limit = match && match[1] ? parseInt(match[1], 10) : 10;
+    const topicFilter = match && match[2] ? parseInt(match[2], 10) : undefined;
+
     const response = await fetchProposals(limit);
     const content: Content[] = [];
 
@@ -93,6 +95,9 @@ const governanceProvider: Provider = {
       const pInfo: ProposalInfo = pInfoResult[0];
       const topic = pInfo.topic.toString();
       const status = pInfo.status.toString();
+
+      // Only include proposals matching filter
+      if (topicFilter !== undefined && parseInt(topic) !== topicFilter) continue;
 
       content.push({ type: 'text', text: `#${id} ${title}` });
       content.push({ type: 'text', text: `Topic: ${topic}` });
@@ -306,15 +311,41 @@ export const starterPlugin: Plugin = {
           },
         },
         {
-          name: 'governance_provider_returns_content',
+          name: 'governance_content_includes_topic_status_summary',
           fn: async () => {
             const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
-            // Simulate a message with limit=10
-            const message = { content: { text: '!proposals 10', source: 'test' } } as Memory;
+            const message = { content: { text: '!proposals 1', source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
-            const contentArray = (result.data as { content: Content[] }).content;
-            if (!contentArray || contentArray.length === 0) throw new Error('Governance provider returned empty content');
+            const content = (result.data as any).content.map((c: Content) => c.text);
+            if (!content.some((t: string) => t.startsWith('Topic:'))) {
+              throw new Error('Missing Topic in content');
+            }
+            if (!content.some((t: string) => t.startsWith('Status:'))) {
+              throw new Error('Missing Status in content');
+            }
+            if (!content.some((t: string) => t.startsWith('Summary:'))) {
+              throw new Error('Missing Summary in content');
+            }
+          },
+        },
+        {
+          name: 'governance_provider_filters_by_topic',
+          fn: async () => {
+            const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
+            if (!provider) throw new Error('Governance provider not found');
+            const topicId = 12;
+            const message = { content: { text: `!proposals 5 topic ${topicId}`, source: 'test' } } as Memory;
+            const result = await provider.get(null as any, message, null as any);
+            const contentItems = (result.data as any).content as Content[];
+            // Extract all Topic lines
+            const topicLines = contentItems.filter(item => item.text.startsWith('Topic:'));
+            if (topicLines.length === 0) throw new Error('No Topic entries found in content');
+            for (const line of topicLines) {
+              if (line.text !== `Topic: ${topicId}`) {
+                throw new Error(`Expected topic '${topicId}' but got '${line.text}'`);
+              }
+            }
           },
         },
         {
