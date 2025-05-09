@@ -70,7 +70,7 @@ async function fetchProposalInfo(
 }
 
 /**
- * Provider handling `!proposals [limit]` commands
+ * Provider handling `!proposals [limit] [topic <id>] [status <id>]` commands
  */
 const governanceProvider: Provider = {
   name: 'GOVERNANCE_PROVIDER',
@@ -80,9 +80,11 @@ const governanceProvider: Provider = {
     message: Memory,
     _state: State
   ): Promise<ProviderResult> => {
-    const match = message.content.text.match(/^!proposals(?:\s+(\d+))?(?:\s+topic\s+(\d+))?$/i);
+    // Regex now captures optional limit, topic, and status
+    const match = message.content.text.match(/^!proposals(?:\s+(\d+))?(?:\s+topic\s+(\d+))?(?:\s+status\s+(\d+))?$/i);
     const limit = match && match[1] ? parseInt(match[1], 10) : 10;
     const topicFilter = match && match[2] ? parseInt(match[2], 10) : undefined;
+    const statusFilter = match && match[3] ? parseInt(match[3], 10) : undefined;
 
     const response = await fetchProposals(limit);
     const content: Content[] = [];
@@ -96,8 +98,9 @@ const governanceProvider: Provider = {
       const topic = pInfo.topic.toString();
       const status = pInfo.status.toString();
 
-      // Only include proposals matching filter
+      // Only include proposals matching filters
       if (topicFilter !== undefined && parseInt(topic) !== topicFilter) continue;
+      if (statusFilter !== undefined && parseInt(status) !== statusFilter) continue;
 
       content.push({ type: 'text', text: `#${id} ${title}` });
       content.push({ type: 'text', text: `Topic: ${topic}` });
@@ -346,6 +349,22 @@ export const starterPlugin: Plugin = {
                 throw new Error(`Expected topic '${topicId}' but got '${line.text}'`);
               }
             }
+          },
+        },
+        {
+          name: 'governance_provider_filters_by_status',
+          fn: async () => {
+            const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
+            if (!provider) throw new Error('Governance provider not found');
+            const statusId = 4;
+            const message = { content: { text: `!proposals 5 status ${statusId}`, source: 'test' } } as Memory;
+            const result = await provider.get(null as any, message, null as any);
+            const items = (result.data as any).content as Content[];
+            const statusLines = items.filter(item => item.text.startsWith('Status:'));
+            if (!statusLines.length) throw new Error('No Status entries found');
+            statusLines.forEach(line => {
+              if (line.text !== `Status: ${statusId}`) throw new Error(`Expected status '${statusId}' but got '${line.text}'`);
+            });
           },
         },
         {
