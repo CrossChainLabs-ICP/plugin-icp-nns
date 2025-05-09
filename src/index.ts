@@ -40,17 +40,19 @@ async function createGovernanceActor(): Promise<ActorSubclass<GovernanceService>
 }
 
 /**
- * Fetch a list of proposals from the NNS Governance canister
+ * Fetch a list of proposals, optionally filtered by status
  */
 async function fetchProposals(
-  limit: number = 10
+  limit: number = 10,
+  statusFilter?: number
 ): Promise<ListProposalInfoResponse> {
   const governance = await createGovernanceActor();
   // Build the request with correct types
   const request: ListProposalInfo = {
     include_reward_status: [],               // Vec<Int32>
     exclude_topic: [],                       // Vec<Int32>
-    include_status: [],                      // Vec<Int32>
+    // Use include_status per interface
+    include_status: statusFilter !== undefined ? Int32Array.from([statusFilter]) : [],
     omit_large_fields: [],                   // Opt<Bool>
     before_proposal: [],                     // Opt<ProposalId>
     include_all_manage_neuron_proposals: [], // Opt<Bool>
@@ -86,7 +88,7 @@ const governanceProvider: Provider = {
     const topicFilter = match && match[2] ? parseInt(match[2], 10) : undefined;
     const statusFilter = match && match[3] ? parseInt(match[3], 10) : undefined;
 
-    const response = await fetchProposals(limit);
+    const response = await fetchProposals(limit, statusFilter);
     const content: Content[] = [];
 
     for (const p of response.proposal_info) {
