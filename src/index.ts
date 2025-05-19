@@ -25,6 +25,7 @@ import type {
 } from './governance/governance.did.js';
 import { idlFactory } from './governance/governance.did.js';
 import { Topic } from './topic';
+import { ProposalStatus } from './status';
 
 // Governance canister ID
 const GOVERNANCE_CANISTER_ID = 'rrkah-fqaaa-aaaaa-aaaaq-cai';
@@ -112,16 +113,12 @@ const governanceProvider: Provider = {
       content.push({ type: 'text', text: `Summary: ${summary}` });
 
       if (topicFilter) {
-        logger.info(`Topic: ${topic}`);
-        logger.info(`Status: ${status}`);
-        logger.info(`Summary: ${summary}`);
+        logger.info(`Proposal title: ${title}`);
+        logger.info(`Topic: ${Topic[topic]}`);
+        logger.info(`Status: ${ProposalStatus[status]}`);
+        //logger.info(`Summary: ${summary}`);
+        //logger.info(`Proposal Timestamp: ${proposal_timestamp_seconds}`);*/
       }
-
-      /*logger.info(`Proposal title: ${title}`);
-      logger.info(`Topic: ${topic}`);
-      logger.info(`Status: ${status}`);
-      logger.info(`Summary: ${summary}`);
-      logger.info(`Proposal Timestamp: ${proposal_timestamp_seconds}`);*/
     }
 
     return { text: '', values: {}, data: { content } };
@@ -323,12 +320,30 @@ export const starterPlugin: Plugin = {
           },
         },
         {
-          name: 'governance_provider_filters_by_topic',
+          name: 'governance_provider_filters_by_topic_ProtocolCanisterManagement',
           fn: async () => {
             const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
-            const topicId = Topic.IcOsVersionElection; //IcOsVersionDeployment
-            const message = { content: { text: `!proposals 50 topic ${topicId}`, source: 'test' } } as Memory;
+            const topicId = Topic.ProtocolCanisterManagement;
+            const message = { content: { text: `!proposals 20 topic ${topicId}`, source: 'test' } } as Memory;
+            const result = await provider.get(null as any, message, null as any);
+            const contentItems = (result.data as any).content as Content[];
+            // Extract all Topic lines
+            const topicLines = contentItems.filter(item => item.text.startsWith('Topic:'));
+            for (const line of topicLines) {
+              if (line.text !== `Topic: ${topicId}`) {
+                throw new Error(`Expected topic '${topicId}' but got '${line.text}'`);
+              }
+            }
+          },
+        },
+                {
+          name: 'governance_provider_filters_by_topic_IcOsVersionElection',
+          fn: async () => {
+            const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
+            if (!provider) throw new Error('Governance provider not found');
+            const topicId = Topic.IcOsVersionElection;
+            const message = { content: { text: `!proposals 20 topic ${topicId}`, source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
             const contentItems = (result.data as any).content as Content[];
             // Extract all Topic lines
@@ -345,7 +360,7 @@ export const starterPlugin: Plugin = {
           fn: async () => {
             const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
-            const statusId = 4;
+            const statusId = ProposalStatus.Open;
             const message = { content: { text: `!proposals 5 status ${statusId}`, source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
             const items = (result.data as any).content as Content[];

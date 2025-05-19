@@ -1,3 +1,5 @@
+//Source: https://github.com/dfinity/ic/blob/master/rs/nns/governance/api/src/types.rs
+
 enum Topic {
     /**
      * The `Unspecified` topic is used as a fallback when
