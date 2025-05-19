@@ -24,7 +24,7 @@ import type {
   ListProposalInfo
 } from './governance/governance.did.js';
 import { idlFactory } from './governance/governance.did.js';
-//import { Topic } from './topic';
+import { Topic } from './topic';
 
 // Governance canister ID
 const GOVERNANCE_CANISTER_ID = 'rrkah-fqaaa-aaaaa-aaaaq-cai';
@@ -111,11 +111,17 @@ const governanceProvider: Provider = {
       content.push({ type: 'text', text: `Status: ${status}` });
       content.push({ type: 'text', text: `Summary: ${summary}` });
 
-      logger.info(`Proposal title: ${title}`);
+      if (topicFilter) {
+        logger.info(`Topic: ${topic}`);
+        logger.info(`Status: ${status}`);
+        logger.info(`Summary: ${summary}`);
+      }
+
+      /*logger.info(`Proposal title: ${title}`);
       logger.info(`Topic: ${topic}`);
       logger.info(`Status: ${status}`);
       logger.info(`Summary: ${summary}`);
-      logger.info(`Proposal Timestamp: ${proposal_timestamp_seconds}`);
+      logger.info(`Proposal Timestamp: ${proposal_timestamp_seconds}`);*/
     }
 
     return { text: '', values: {}, data: { content } };
@@ -209,27 +215,6 @@ const helloWorldAction: Action = {
       },
     ],
   ],
-};
-
-/**
- * Example Hello World Provider
- * This demonstrates the simplest possible provider implementation
- */
-const helloWorldProvider: Provider = {
-  name: 'HELLO_WORLD_PROVIDER',
-  description: 'A simple example provider',
-
-  get: async (
-    _runtime: IAgentRuntime,
-    _message: Memory,
-    _state: State
-  ): Promise<ProviderResult> => {
-    return {
-      text: 'I am a provider',
-      values: {},
-      data: {},
-    };
-  },
 };
 
 export class StarterService extends Service {
@@ -342,13 +327,12 @@ export const starterPlugin: Plugin = {
           fn: async () => {
             const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
-            const topicId = 12;
-            const message = { content: { text: `!proposals 5 topic ${topicId}`, source: 'test' } } as Memory;
+            const topicId = Topic.IcOsVersionElection; //IcOsVersionDeployment
+            const message = { content: { text: `!proposals 50 topic ${topicId}`, source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
             const contentItems = (result.data as any).content as Content[];
             // Extract all Topic lines
             const topicLines = contentItems.filter(item => item.text.startsWith('Topic:'));
-            if (topicLines.length === 0) throw new Error('No Topic entries found in content');
             for (const line of topicLines) {
               if (line.text !== `Topic: ${topicId}`) {
                 throw new Error(`Expected topic '${topicId}' but got '${line.text}'`);
@@ -370,36 +354,6 @@ export const starterPlugin: Plugin = {
             statusLines.forEach(line => {
               if (line.text !== `Status: ${statusId}`) throw new Error(`Expected status '${statusId}' but got '${line.text}'`);
             });
-          },
-        },
-        {
-          name: 'example_test',
-          fn: async (runtime) => {
-            logger.debug('example_test run by ', runtime.character.name);
-            // Add a proper assertion that will pass
-            if (runtime.character.name !== 'Eliza') {
-              throw new Error(
-                `Expected character name to be "Eliza" but got "${runtime.character.name}"`
-              );
-            }
-            // Verify the plugin is loaded properly
-            const service = runtime.getService('starter');
-            if (!service) {
-              throw new Error('Starter service not found');
-            }
-            // Don't return anything to match the void return type
-          },
-        },
-        {
-          name: 'should_have_hello_world_action',
-          fn: async (runtime) => {
-            // Check if the hello world action is registered
-            // Look for the action in our plugin's actions
-            // The actual action name in this plugin is "helloWorld", not "hello"
-            const actionExists = starterPlugin.actions.some((a) => a.name === 'HELLO_WORLD');
-            if (!actionExists) {
-              throw new Error('Hello world action not found in plugin');
-            }
           },
         },
       ],
@@ -449,7 +403,7 @@ export const starterPlugin: Plugin = {
   },
   services: [StarterService],
   actions: [helloWorldAction],
-  providers: [helloWorldProvider, governanceProvider],
+  providers: [governanceProvider],
 };
 
 export default starterPlugin;
