@@ -24,11 +24,8 @@ import type {
   ListProposalInfo
 } from './governance/governance.did.js';
 import { idlFactory } from './governance/governance.did.js';
-import { Topic } from './topic';
-import { ProposalStatus } from './status';
-
-// Governance canister ID
-const GOVERNANCE_CANISTER_ID = 'rrkah-fqaaa-aaaaa-aaaaq-cai';
+import { Topic } from './topic.ts';
+import { ProposalStatus } from './status.ts';
 
 /**
  * Create an authenticated actor for the NNS Governance canister
@@ -37,7 +34,7 @@ async function createGovernanceActor(): Promise<ActorSubclass<GovernanceService>
   const agent = await HttpAgent.create({ host: 'https://ic0.app' });
   return Actor.createActor<GovernanceService>(idlFactory, {
     agent,
-    canisterId: GOVERNANCE_CANISTER_ID,
+    canisterId: process.env.GOVERNANCE_CANISTER_ID,
   });
 }
 
@@ -96,7 +93,7 @@ const governanceProvider: Provider = {
     for (const p of response.proposal_info) {
       const id = p.id[0].id.toString();
       const title = p.proposal[0].title[0];
-      const summary = p.proposal[0].summary || 'No summary provided';
+      const summary = p.proposal[0].summary || '';
       const pInfoResult = await fetchProposalInfo(p.id[0].id);
       const pInfo: ProposalInfo = pInfoResult[0];
       const topic = pInfo.topic.toString();
@@ -128,10 +125,10 @@ const governanceProvider: Provider = {
 /**
  * Defines the configuration schema for a plugin, including the validation rules for the plugin name.
  *
- * @type {import('zod').ZodObject<{ EXAMPLE_PLUGIN_VARIABLE: import('zod').ZodString }>}
+ * @type {import('zod').ZodObject<{ GOVERNANCE_CANISTER_ID: import('zod').ZodString }>}
  */
 const configSchema = z.object({
-  EXAMPLE_PLUGIN_VARIABLE: z
+  GOVERNANCE_CANISTER_ID: z
     .string()
     .min(1, 'Example plugin variable is not provided')
     .optional()
@@ -214,6 +211,7 @@ const helloWorldAction: Action = {
   ],
 };
 
+/*
 export class StarterService extends Service {
   static serviceType = 'starter';
   capabilityDescription =
@@ -242,17 +240,51 @@ export class StarterService extends Service {
     logger.info('*** THIRD CHANGE - TESTING FILE WATCHING! ***');
   }
 }
+*/
+
+export class StarterService extends Service {
+  static serviceType = 'starter';
+  capabilityDescription =
+    'This is a starter service which is attached to the agent through the starter plugin.';
+
+  // explicitly declare the field
+  protected runtime: IAgentRuntime;
+
+  constructor(runtime: IAgentRuntime) {
+    super(runtime);
+    this.runtime = runtime;
+  }
+
+  static async start(runtime: IAgentRuntime) {
+    logger.info(`*** Starting starter service - ${new Date().toISOString()} ***`);
+    return new StarterService(runtime);
+  }
+
+  static async stop(runtime: IAgentRuntime) {
+    logger.info('*** TESTING DEV MODE - STOP MESSAGE CHANGED! ***');
+    const service = runtime.getService(StarterService.serviceType);
+    if (!service) throw new Error('Starter service not found');
+    service.stop();
+  }
+
+  async stop() {
+    logger.info('*** THIRD CHANGE - TESTING FILE WATCHING! ***');
+  }
+}
+
 
 export const starterPlugin: Plugin = {
   name: 'plugin-icp-nns',
   description: 'Plugin starter for elizaOS',
   config: {
-    EXAMPLE_PLUGIN_VARIABLE: process.env.EXAMPLE_PLUGIN_VARIABLE,
+    GOVERNANCE_CANISTER_ID: process.env.GOVERNANCE_CANISTER_ID,
   },
   async init(config: Record<string, string>) {
     logger.info('*** TESTING DEV MODE - PLUGIN MODIFIED AND RELOADED! ***');
     try {
       const validatedConfig = await configSchema.parseAsync(config);
+
+
 
       // Set all environment variables at once
       for (const [key, value] of Object.entries(validatedConfig)) {
