@@ -43,13 +43,29 @@ async function createGovernanceActor(): Promise<ActorSubclass<GovernanceService>
  */
 async function fetchProposals(
   limit: number = 10,
-  statusFilter?: number
+  statusFilter?: number,
+  topicFilter?: number,
 ): Promise<ListProposalInfoResponse> {
   const governance = await createGovernanceActor();
+
+  let exclude_topic = [];
+
+  if (topicFilter != undefined) {
+    for (const [name, value] of Object.entries(Topic)) {
+      const topic = parseInt(name);
+      if (!isNaN(topic)) {
+        if (topic !== topicFilter) {
+          exclude_topic.push(topic);
+          //logger.info(`name: ${name}, value: ${value}`);
+        }
+      }
+    }
+  }
+
   // Build the request with correct types
   const request: ListProposalInfo = {
     include_reward_status: [],               // Vec<Int32>
-    exclude_topic: [],                       // Vec<Int32>
+    exclude_topic,                           // Vec<Int32>
     // Use include_status per interface
     include_status: statusFilter !== undefined ? Int32Array.from([statusFilter]) : [],
     omit_large_fields: [],                   // Opt<Bool>
@@ -87,7 +103,7 @@ const governanceProvider: Provider = {
     const topicFilter = match && match[2] ? parseInt(match[2], 10) : undefined;
     const statusFilter = match && match[3] ? parseInt(match[3], 10) : undefined;
 
-    const response = await fetchProposals(limit, statusFilter);
+    const response = await fetchProposals(limit, statusFilter, topicFilter);
     const content: Content[] = [];
 
     for (const p of response.proposal_info) {
@@ -357,7 +373,7 @@ export const starterPlugin: Plugin = {
             const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
             const topicId = Topic.ProtocolCanisterManagement;
-            const message = { content: { text: `!proposals 20 topic ${topicId}`, source: 'test' } } as Memory;
+            const message = { content: { text: `!proposals 50 topic ${topicId}`, source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
             const contentItems = (result.data as any).content as Content[];
             // Extract all Topic lines
