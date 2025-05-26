@@ -126,6 +126,7 @@ const governanceProvider: Provider = {
       content.push({ type: 'text', text: `Summary: ${summary}` });
 
       if (topicFilter) {
+        logger.info(`Proposal id: ${id}`);
         logger.info(`Proposal title: ${title}`);
         logger.info(`Topic: ${Topic[topic]}`);
         logger.info(`Status: ${ProposalStatus[status]}`);
@@ -391,7 +392,8 @@ export const starterPlugin: Plugin = {
             const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
             const topicId = Topic.IcOsVersionElection;
-            const message = { content: { text: `!proposals 20 topic ${topicId}`, source: 'test' } } as Memory;
+            const statusId = ProposalStatus.Executed;
+            const message = { content: { text: `!proposals 20 topic ${topicId} status ${statusId}`, source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
             const contentItems = (result.data as any).content as Content[];
             // Extract all Topic lines
@@ -409,7 +411,7 @@ export const starterPlugin: Plugin = {
             const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
             const statusId = ProposalStatus.Open;
-            const message = { content: { text: `!proposals 5 status ${statusId}`, source: 'test' } } as Memory;
+            const message = { content: { text: `!proposals 10 status ${statusId}`, source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
             const items = (result.data as any).content as Content[];
             const statusLines = items.filter(item => item.text.startsWith('Status:'));
