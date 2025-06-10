@@ -1,0 +1,11 @@
+Develop your plugin following the structure in your generated project:
+
+# Test your plugin
+elizaos start
+# Publish your plugin when ready
+elizaos publish
+
+Publishing options:
+
+# Publish to npm instead of GitHub
+elizaos publish --npm
