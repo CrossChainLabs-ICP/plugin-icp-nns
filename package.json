@@ -1,7 +1,7 @@
 {
   "name": "@crosschainlabs/plugin-icp-nns",
   "description": "NNS Plugin for elizaOS",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -63,11 +63,11 @@
   "agentConfig": {
     "pluginType": "elizaos:plugin:1.0.0",
     "pluginParameters": {
-      "API_KEY": {
+      "GOVERNANCE_CANISTER_ID": {
         "type": "string",
-        "description": "API key for the service"
+        "description": "NNS Guvernance Canister ID"
       }
     }
   },
-  "npmPackage": "@elizaos/plugin-icp-nns"
+  "npmPackage": "@crosschainlabs/plugin-icp-nns"
 }
