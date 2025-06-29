@@ -104,7 +104,16 @@ const governanceProvider: Provider = {
     const statusFilter = match && match[3] ? parseInt(match[3], 10) : undefined;
 
     const response = await fetchProposals(limit, statusFilter, topicFilter);
-    const content: Content[] = [];
+    //const content: Content[] = [];
+
+    const proposals: {
+      id: string;
+      title: string;
+      summary: string;
+      topic: string;
+      status: string;
+      timestamp: bigint;
+    }[] = [];
 
     for (const p of response.proposal_info) {
       const id = p.id[0].id.toString();
@@ -120,10 +129,12 @@ const governanceProvider: Provider = {
       if (topicFilter !== undefined && parseInt(topic) !== topicFilter) continue;
       if (statusFilter !== undefined && parseInt(status) !== statusFilter) continue;
 
-      content.push({ type: 'text', text: `#${id} ${title}` });
+      /*content.push({ type: 'text', text: `#${id} ${title}` });
       content.push({ type: 'text', text: `Topic: ${topic}` });
       content.push({ type: 'text', text: `Status: ${status}` });
-      content.push({ type: 'text', text: `Summary: ${summary}` });
+      content.push({ type: 'text', text: `Summary: ${summary}` });*/
+
+      proposals.push({ id, title, summary, topic, status, timestamp: proposal_timestamp_seconds });
 
       if (topicFilter) {
         logger.info(`Proposal id: ${id}`);
@@ -135,7 +146,7 @@ const governanceProvider: Provider = {
       }
     }
 
-    return { text: '', values: {}, data: { content } };
+    return { text: '', values: {}, data: { proposals } };
   },
 };
 
@@ -351,21 +362,24 @@ export const nnsPlugin: Plugin = {
           },
         },
         {
-          name: 'governance_content_includes_topic_status_summary',
+          name: 'governance_proposals_include_topic_status_summary',
           fn: async () => {
             const provider = nnsPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
             const message = { content: { text: '!proposals 10', source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
-            const content = (result.data as any).content.map((c: Content) => c.text);
-            if (!content.some((t: string) => t.startsWith('Topic:'))) {
-              throw new Error('Missing Topic in content');
+            const { proposals } = result.data as any;
+            if (!Array.isArray(proposals) || proposals.length === 0) {
+              throw new Error('No proposals returned');
             }
-            if (!content.some((t: string) => t.startsWith('Status:'))) {
-              throw new Error('Missing Status in content');
+            if (!proposals.some((p: any) => typeof p.topic === 'string' && p.topic.length)) {
+              throw new Error('Missing topic in proposals');
             }
-            if (!content.some((t: string) => t.startsWith('Summary:'))) {
-              throw new Error('Missing Summary in content');
+            if (!proposals.some((p: any) => typeof p.status === 'string' && p.status.length)) {
+              throw new Error('Missing status in proposals');
+            }
+            if (!proposals.some((p: any) => typeof p.summary === 'string')) {
+              throw new Error('Missing summary in proposals');
             }
           },
         },
@@ -377,12 +391,10 @@ export const nnsPlugin: Plugin = {
             const topicId = Topic.ProtocolCanisterManagement;
             const message = { content: { text: `!proposals 50 topic ${topicId}`, source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
-            const contentItems = (result.data as any).content as Content[];
-            // Extract all Topic lines
-            const topicLines = contentItems.filter(item => item.text.startsWith('Topic:'));
-            for (const line of topicLines) {
-              if (line.text !== `Topic: ${topicId}`) {
-                throw new Error(`Expected topic '${topicId}' but got '${line.text}'`);
+            const { proposals } = result.data as any;
+            for (const p of proposals) {
+              if (parseInt(p.topic, 10) !== topicId) {
+                throw new Error(`Expected topic '${topicId}' but got '${p.topic}'`);
               }
             }
           },
@@ -396,12 +408,10 @@ export const nnsPlugin: Plugin = {
             const statusId = ProposalStatus.Executed;
             const message = { content: { text: `!proposals 20 topic ${topicId} status ${statusId}`, source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
-            const contentItems = (result.data as any).content as Content[];
-            // Extract all Topic lines
-            const topicLines = contentItems.filter(item => item.text.startsWith('Topic:'));
-            for (const line of topicLines) {
-              if (line.text !== `Topic: ${topicId}`) {
-                throw new Error(`Expected topic '${topicId}' but got '${line.text}'`);
+            const { proposals } = result.data as any;
+            for (const p of proposals) {
+              if (parseInt(p.topic, 10) !== topicId) {
+                throw new Error(`Expected topic '${topicId}' but got '${p.topic}'`);
               }
             }
           },
@@ -414,12 +424,13 @@ export const nnsPlugin: Plugin = {
             const statusId = ProposalStatus.Open;
             const message = { content: { text: `!proposals 10 status ${statusId}`, source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
-            const items = (result.data as any).content as Content[];
-            const statusLines = items.filter(item => item.text.startsWith('Status:'));
-            if (!statusLines.length) throw new Error('No Status entries found');
-            statusLines.forEach(line => {
-              if (line.text !== `Status: ${statusId}`) throw new Error(`Expected status '${statusId}' but got '${line.text}'`);
-            });
+            const { proposals } = result.data as any;
+            if (!proposals.length) throw new Error('No proposals returned');
+            for (const p of proposals) {
+              if (parseInt(p.status, 10) !== statusId) {
+                throw new Error(`Expected status '${statusId}' but got '${p.status}'`);
+              }
+            }
           },
         },
       ],
