@@ -1,7 +1,7 @@
 {
   "name": "@crosschainlabs/plugin-icp-nns",
   "description": "NNS Plugin for elizaOS",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "private": false,
   "type": "module",
   "main": "dist/index.js",

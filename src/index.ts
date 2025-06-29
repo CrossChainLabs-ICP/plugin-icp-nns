@@ -264,8 +264,9 @@ export class StarterService extends Service {
   capabilityDescription =
     'This is a starter service which is attached to the agent through the starter plugin.';
 
+  declare runtime: IAgentRuntime;
   // explicitly declare the field
-  protected runtime: IAgentRuntime;
+  //protected runtime: IAgentRuntime;
 
   constructor(runtime: IAgentRuntime) {
     super(runtime);
@@ -290,7 +291,7 @@ export class StarterService extends Service {
 }
 
 
-export const starterPlugin: Plugin = {
+export const nnsPlugin: Plugin = {
   name: 'plugin-icp-nns',
   description: 'Plugin starter for elizaOS',
   config: {
@@ -344,7 +345,7 @@ export const starterPlugin: Plugin = {
         {
           name: 'should_have_governance_provider',
           fn: async () => {
-            if (!starterPlugin.providers.some(p => p.name === 'GOVERNANCE_PROVIDER')) {
+            if (!nnsPlugin.providers.some(p => p.name === 'GOVERNANCE_PROVIDER')) {
               throw new Error('Governance provider not found in plugin providers');
             }
           },
@@ -352,7 +353,7 @@ export const starterPlugin: Plugin = {
         {
           name: 'governance_content_includes_topic_status_summary',
           fn: async () => {
-            const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
+            const provider = nnsPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
             const message = { content: { text: '!proposals 10', source: 'test' } } as Memory;
             const result = await provider.get(null as any, message, null as any);
@@ -371,7 +372,7 @@ export const starterPlugin: Plugin = {
         {
           name: 'governance_provider_filters_by_topic_ProtocolCanisterManagement',
           fn: async () => {
-            const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
+            const provider = nnsPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
             const topicId = Topic.ProtocolCanisterManagement;
             const message = { content: { text: `!proposals 50 topic ${topicId}`, source: 'test' } } as Memory;
@@ -389,7 +390,7 @@ export const starterPlugin: Plugin = {
                 {
           name: 'governance_provider_filters_by_topic_IcOsVersionElection',
           fn: async () => {
-            const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
+            const provider = nnsPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
             const topicId = Topic.IcOsVersionElection;
             const statusId = ProposalStatus.Executed;
@@ -408,7 +409,7 @@ export const starterPlugin: Plugin = {
         {
           name: 'governance_provider_filters_by_status',
           fn: async () => {
-            const provider = starterPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
+            const provider = nnsPlugin.providers.find(p => p.name === 'GOVERNANCE_PROVIDER');
             if (!provider) throw new Error('Governance provider not found');
             const statusId = ProposalStatus.Open;
             const message = { content: { text: `!proposals 10 status ${statusId}`, source: 'test' } } as Memory;
@@ -471,4 +472,4 @@ export const starterPlugin: Plugin = {
   providers: [governanceProvider],
 };
 
-export default starterPlugin;
+export default nnsPlugin;
