@@ -135,15 +135,6 @@ const governanceProvider: Provider = {
       content.push({ type: 'text', text: `Summary: ${summary}` });*/
 
       proposals.push({ id, title, summary, topic, status, timestamp: proposal_timestamp_seconds });
-
-      if (topicFilter) {
-        logger.info(`Proposal id: ${id}`);
-        logger.info(`Proposal title: ${title}`);
-        logger.info(`Topic: ${Topic[topic]}`);
-        logger.info(`Status: ${ProposalStatus[status]}`);
-        //logger.info(`Summary: ${summary}`);
-        //logger.info(`Proposal Timestamp: ${proposal_timestamp_seconds}`);*/
-      }
     }
 
     return { text: '', values: {}, data: { proposals } };
